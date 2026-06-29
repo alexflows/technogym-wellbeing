@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Technogym Wellbeing Experiences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      height: -webkit-fill-available;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Raleway', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ─── Stage ─── */
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .vid {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1.4s ease;
+    }
+    .vid.show { opacity: 1; }
+
+    #scrim {
+      position: absolute; inset: 0;
+      background: rgba(0, 0, 0, 0.28);
+      pointer-events: none;
+    }
+
+    /* ─── Text overlay ─── */
+    #text-layer {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+
+    #phrase {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      color: #fff;
+      font-size: clamp(13px, 1.9vw, 22px);
+      font-weight: 200;
+      letter-spacing: 0.26em;
+      text-align: center;
+      line-height: 2.1;
+      max-width: 72vw;
+      opacity: 0;
+      transition: opacity 0.75s ease;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.55);
+    }
+    #phrase.show { opacity: 1; }
+    #phrase.key {
+      font-size: clamp(15px, 2.2vw, 26px);
+      font-weight: 400;
+      letter-spacing: 0.22em;
+    }
+
+    .phrase-logo {
+      height: clamp(26px, 3.5vw, 42px);
+      display: block;
+      opacity: 0.9;
+    }
+
+    /* ─── Pause button ─── */
+    #controls {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    #controls.visible { opacity: 0.28; pointer-events: all; }
+    #controls:hover   { opacity: 0.85; }
+
+    #pause-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 50%;
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    #pause-btn svg { fill: #fff; }
+    #icon-play { display: none; margin-left: 3px; }
+
+    /* ─── Fullscreen button ─── */
+    #fs-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 50;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0.28;
+      transition: opacity 0.4s ease;
+    }
+    #fs-btn:hover { opacity: 0.85; }
+
+    /* ─── Intro ─── */
+    #intro {
+      position: fixed; inset: 0; z-index: 100;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+      cursor: pointer;
+      transition: opacity 1s ease;
+    }
+    #intro.out { opacity: 0; pointer-events: none; }
+
+    .brand {
+      color: #fff;
+      font-size: clamp(9px, 1.1vw, 13px);
+      font-weight: 200;
+      letter-spacing: 0.58em;
+    }
+
+    .logo {
+      height: 36px;
+      opacity: 0.85;
+    }
+
+    .ring {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.28);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.4s;
+      margin-top: 8px;
+    }
+    #intro:hover .ring { border-color: rgba(255,255,255,0.85); }
+    .ring svg { fill: #fff; margin-left: 5px; }
+
+    .sub {
+      color: rgba(255,255,255,0.2);
+      font-size: 10px; font-weight: 200;
+      letter-spacing: 0.55em;
+    }
+
+    /* ─── Soul Elements co-brand ─── */
+    .cobrand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .cobrand-by {
+      color: rgba(255,255,255,0.35);
+      font-size: clamp(7px, 0.8vw, 9px);
+      font-weight: 200;
+      letter-spacing: 0.45em;
+    }
+    .cobrand-logo {
+      height: clamp(36px, 4.5vw, 56px);
+      opacity: 0.9;
+    }
+    #intro .cobrand-logo {
+      height: clamp(28px, 3.5vw, 42px);
+    }
+    .phrase-cobrand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .phrase-cobrand-by {
+      color: rgba(255,255,255,0.4);
+      font-size: clamp(8px, 1vw, 11px);
+      font-weight: 200;
+      letter-spacing: 0.4em;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.55);
+    }
+    .phrase-cobrand-logo {
+      height: clamp(26px, 3vw, 40px);
+      opacity: 0.9;
+    }
+
+    /* ─── Stacking phrases (Acts 4-7) ─── */
+    #phrase .stack-title {
+      font-size: clamp(15px, 2.2vw, 26px);
+      font-weight: 400;
+      letter-spacing: 0.22em;
+    }
+    #phrase .stack-line {
+      font-size: clamp(13px, 1.9vw, 22px);
+      font-weight: 200;
+      letter-spacing: 0.26em;
+    }
+
+    /* ─── Methodology overlay (Act 3) ─── */
+    #methodology {
+      position: absolute; inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.75s ease;
+    }
+    #methodology.show { opacity: 1; }
+
+    .method-step {
+      color: #fff;
+      font-size: clamp(11px, 1.6vw, 19px);
+      font-weight: 300;
+      letter-spacing: 0.28em;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.55);
+      padding: 4px 0;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .method-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .method-connector {
+      width: 1px;
+      height: clamp(14px, 1.8vw, 24px);
+      background: rgba(255,255,255,0.35);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .method-connector.visible { opacity: 1; }
+
+    /* ─── End screen ─── */
+    #end {
+      position: fixed; inset: 0; z-index: 100;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 1.6s ease;
+    }
+    #end.show { opacity: 1; pointer-events: all; }
+
+    #replay-btn {
+      font-family: inherit;
+      font-size: 10px; font-weight: 200;
+      letter-spacing: 0.48em;
+      color: rgba(255,255,255,0.22);
+      background: none; border: none;
+      cursor: pointer; padding: 14px 22px;
+      transition: color 0.35s;
+      margin-top: 8px;
+    }
+    #replay-btn:hover { color: rgba(255,255,255,0.70); }
+
+    /* ─── Rotate overlay (mobile portrait only) ─── */
+    #rotate-overlay {
+      display: none;
+    }
+    @media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+      #rotate-overlay {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: #000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Rotate overlay ─── -->
+<div id="rotate-overlay">
+  <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="8" width="24" height="36" rx="3" stroke="white" stroke-width="1.5"/>
+    <path d="M38 6 C44 10 48 18 46 28" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <polyline points="44,26 46,28 48,25" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div style="color:#fff;font-size:clamp(9px,3vw,13px);font-weight:200;letter-spacing:0.5em;text-align:center">ROTATE YOUR DEVICE</div>
+  <div style="color:rgba(255,255,255,0.3);font-size:clamp(8px,2.5vw,11px);font-weight:200;letter-spacing:0.3em;text-align:center">THIS EXPERIENCE IS DESIGNED<br>FOR LANDSCAPE VIEW</div>
+</div>
+
+<!-- ─── Intro ─── -->
+<div id="intro">
+  <div class="brand">TECHNOGYM WELLBEING EXPERIENCES</div>
+  <img src="assets/logos/logo-technogym.png" class="logo" alt="Technogym" onerror="this.style.display='none'">
+  <div class="cobrand">
+    <div class="cobrand-by">BY</div>
+    <img src="assets/logos/Logo con pastilla-22.png" class="cobrand-logo" alt="Soul Elements" onerror="this.style.display='none'">
+  </div>
+  <div class="ring">
+    <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0 L13 7.5 L0 15 Z"/></svg>
+  </div>
+  <div class="sub">PLAY</div>
+</div>
+
+<!-- ─── Music ─── -->
+<audio id="bg-music" loop>
+  <source src="assets/audio/ODESZA - A Moment Apart - Official Audio.m4a" type="audio/mp4">
+</audio>
+
+<!-- ─── Stage ─── -->
+<div id="stage">
+  <video id="vid-a" class="vid" playsinline muted preload="none"></video>
+  <video id="vid-b" class="vid" playsinline muted preload="none"></video>
+  <div id="scrim"></div>
+  <div id="text-layer"><div id="phrase"></div></div>
+  <div id="methodology">
+    <div class="method-step" data-step="1">BUSINESS SCAN</div>
+    <div class="method-connector" data-conn="1"></div>
+    <div class="method-step" data-step="2">STARTER &amp; CONSULTANCY</div>
+    <div class="method-connector" data-conn="2"></div>
+    <div class="method-step" data-step="3">TASKFORCE</div>
+    <div class="method-connector" data-conn="3"></div>
+    <div class="method-step" data-step="4">FLOW</div>
+  </div>
+</div>
+
+<!-- ─── Pause / Play ─── -->
+<div id="controls">
+  <button id="pause-btn" aria-label="Pause / Play">
+    <svg id="icon-pause" width="12" height="14" viewBox="0 0 12 14">
+      <rect x="0" y="0" width="4" height="14"/>
+      <rect x="8" y="0" width="4" height="14"/>
+    </svg>
+    <svg id="icon-play" width="12" height="14" viewBox="0 0 12 14">
+      <path d="M0 0 L12 7 L0 14 Z"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ─── Fullscreen toggle ─── -->
+<button id="fs-btn" aria-label="Toggle fullscreen">
+  <svg id="icon-fs-enter" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="1,5 1,1 5,1"/>
+    <polyline points="9,1 13,1 13,5"/>
+    <polyline points="13,9 13,13 9,13"/>
+    <polyline points="5,13 1,13 1,9"/>
+  </svg>
+  <svg id="icon-fs-exit" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <polyline points="4,1 4,4 1,4"/>
+    <polyline points="10,1 10,4 13,4"/>
+    <polyline points="13,10 10,10 10,13"/>
+    <polyline points="1,10 4,10 4,13"/>
+  </svg>
+</button>
+
+<!-- ─── End screen ─── -->
+<div id="end">
+  <div class="brand">TECHNOGYM WELLBEING EXPERIENCES</div>
+  <img src="assets/logos/logo-technogym.png" class="logo" alt="Technogym" onerror="this.style.display='none'">
+  <div class="cobrand">
+    <div class="cobrand-by">BY</div>
+    <img src="assets/logos/Logo con pastilla-22.png" class="cobrand-logo" alt="Soul Elements" onerror="this.style.display='none'">
+  </div>
+  <button id="replay-btn">↺ &nbsp; REPLAY</button>
+</div>
+
+<script>
+  const CROSSFADE     = 1.4;
+  const PRELOAD_AHEAD = 6; // seconds before crossfade to start loading next video
+
+  /* Total: 12+8+8+7+8+8+9+10 = 70 s */
+  const ACTS = [
+    {
+      src: 'assets/videos/Acto 1.mov.mp4', dur: 12, hidePhrase: 10.5,
+      phrases: [
+        { t: 0.4, h: 'THE WAY PEOPLE TRAVEL HAS CHANGED' },
+        { t: 2.8, h: "TODAY'S GUESTS EXPECT MORE THAN A STAY" },
+        { t: 5.2, h: 'THEY EXPECT WELLBEING' },
+        { t: 7.8, h: 'WELCOME TO<br>TECHNOGYM WELLBEING EXPERIENCES', key: true, logo: true },
+      ]
+    },
+    {
+      src: 'assets/videos/acto nuevo.mp4', dur: 8, hidePhrase: 6.5,
+      phrases: [
+        { t: 0.3, h: 'FROM STRATEGY TO IMPLEMENTATION' },
+        { t: 2.3, h: 'A COMPLETE WELLBEING METHODOLOGY' },
+        { t: 4.3, h: 'ONE PARTNER. ONE JOURNEY.', key: true },
+      ]
+    },
+    {
+      src: 'assets/videos/Acto 4.mp4', dur: 8, hidePhrase: 6.5, zoom: 1.78,
+      methodology: true,
+      phrases: []
+    },
+    {
+      src: 'assets/videos/business.mp4', dur: 7, hidePhrase: 5.5,
+      stacking: true,
+      phrases: [
+        { t: 0.3, h: 'BUSINESS SCAN' },
+        { t: 2.0, h: "ANALYSE YOUR HOTEL'S POTENTIAL" },
+        { t: 4.0, h: 'DEFINE THE BEST WELLBEING STRATEGY' },
+      ]
+    },
+    {
+      src: 'assets/videos/consultant.mp4', dur: 8, hidePhrase: 6.5,
+      stacking: true,
+      phrases: [
+        { t: 0.3, h: 'STARTER & CONSULTANCY' },
+        { t: 2.3, h: 'DESIGN YOUR WELLBEING CONCEPT' },
+        { t: 4.3, h: 'BUILD A CLEAR IMPLEMENTATION PLAN' },
+      ]
+    },
+    {
+      src: 'assets/videos/Formacion.mp4', dur: 8, hidePhrase: 6.5, zoom: 3.2, origin: 'center 65%',
+      stacking: true,
+      phrases: [
+        { t: 0.3, h: 'TASKFORCE' },
+        { t: 2.3, h: 'WE SUPPORT THE IMPLEMENTATION' },
+        { t: 4.3, h: 'EXPERTS WORKING WITH YOUR TEAM' },
+      ]
+    },
+    {
+      src: 'assets/videos/Acto 3.MP4', dur: 9, hidePhrase: 7.5,
+      stacking: true,
+      phrases: [
+        { t: 0.3, h: 'FLOW' },
+        { t: 2.0, h: 'A FLEXIBLE WELLBEING PROGRAM' },
+        { t: 4.0, h: 'CLASSES · EXPERIENCES · EVENTS' },
+        { t: 5.8, h: 'THREE LEVELS. ENDLESS POSSIBILITIES' },
+      ]
+    },
+    {
+      src: 'assets/videos/las video.mp4', dur: 10, hidePhrase: 8.5, startAt: 2,
+      phrases: [
+        { t: 0.4, h: 'WELLBEING IS NO LONGER AN AMENITY', key: true },
+        { t: 3.0, h: "IT'S A NEW WAY OF HOSPITALITY" },
+        { t: 5.8, h: 'TECHNOGYM WELLBEING EXPERIENCES', key: true, logo: true },
+      ]
+    },
+  ];
+
+  /* ─── DOM ─── */
+  const vids      = [document.getElementById('vid-a'), document.getElementById('vid-b')];
+  const phrase    = document.getElementById('phrase');
+  const controls  = document.getElementById('controls');
+  const pauseBtn  = document.getElementById('pause-btn');
+  const iconPause = document.getElementById('icon-pause');
+  const iconPlay  = document.getElementById('icon-play');
+  const introEl     = document.getElementById('intro');
+  const endEl       = document.getElementById('end');
+  const replayBtn   = document.getElementById('replay-btn');
+  const fsBtn       = document.getElementById('fs-btn');
+  const iconFsEnter = document.getElementById('icon-fs-enter');
+  const iconFsExit  = document.getElementById('icon-fs-exit');
+  const bgMusic     = document.getElementById('bg-music');
+
+  let activeIdx  = 0;
+  let paused     = false;
+  let timerQueue = [];
+
+  /* ─── Timers ─── */
+  function sched(fn, ms) {
+    const entry = { fn, remaining: ms, fireAt: Date.now() + ms };
+    entry.id = setTimeout(fn, ms);
+    timerQueue.push(entry);
+  }
+
+  function clearAll() {
+    timerQueue.forEach(e => clearTimeout(e.id));
+    timerQueue = [];
+  }
+
+  /* ─── Methodology ─── */
+  const methodologyEl = document.getElementById('methodology');
+
+  function showMethodology() {
+    methodologyEl.classList.add('show');
+  }
+  function hideMethodology() {
+    methodologyEl.classList.remove('show');
+    methodologyEl.querySelectorAll('.visible').forEach(e => e.classList.remove('visible'));
+  }
+  function showMethodStep(n) {
+    const step = methodologyEl.querySelector(`.method-step[data-step="${n}"]`);
+    if (step) step.classList.add('visible');
+    if (n > 1) {
+      const conn = methodologyEl.querySelector(`.method-connector[data-conn="${n - 1}"]`);
+      if (conn) conn.classList.add('visible');
+    }
+  }
+
+  /* ─── Stacking phrases ─── */
+  function initStack(titleHtml) {
+    phrase.style.transition = 'none';
+    phrase.style.opacity    = '0';
+    void phrase.offsetHeight;
+    phrase.innerHTML = '';
+    const title = document.createElement('span');
+    title.className = 'stack-title';
+    title.innerHTML = titleHtml;
+    title.style.opacity = '0';
+    title.style.transition = 'opacity 0.65s ease';
+    phrase.appendChild(title);
+    phrase.style.transition = '';
+    requestAnimationFrame(() => {
+      phrase.style.opacity = '';
+      phrase.className = 'show';
+      requestAnimationFrame(() => { title.style.opacity = '1'; });
+    });
+  }
+
+  function appendStack(html) {
+    const line = document.createElement('span');
+    line.className = 'stack-line';
+    line.innerHTML = html;
+    line.style.opacity = '0';
+    line.style.transition = 'opacity 0.65s ease';
+    phrase.appendChild(line);
+    requestAnimationFrame(() => { line.style.opacity = '1'; });
+  }
+
+  /* ─── Phrase ─── */
+  function showPhrase(html, isKey, showLogo) {
+    let content = `<span>${html}</span>`;
+    if (showLogo) {
+      content += `<img src="assets/logos/logo-technogym.png" class="phrase-logo" alt="Technogym" onerror="this.style.display='none'">`;
+      content += `<div class="phrase-cobrand"><span class="phrase-cobrand-by">BY</span><img src="assets/logos/Logo con pastilla-22.png" class="phrase-cobrand-logo" alt="Soul Elements" onerror="this.style.display='none'"></div>`;
+    }
+    // Snap to invisible instantly (no mid-transition flicker), then fade in clean
+    phrase.style.transition = 'none';
+    phrase.style.opacity    = '0';
+    void phrase.offsetHeight; // commit invisible state before restoring transition
+    phrase.innerHTML = content;
+    phrase.style.transition = '';
+    requestAnimationFrame(() => {
+      phrase.style.opacity = '';
+      phrase.className = isKey ? 'show key' : 'show';
+    });
+  }
+
+  /* ─── Crossfade ─── */
+  function crossfade(src, zoom, origin, startAt) {
+    const prev = vids[activeIdx];
+    activeIdx  = 1 - activeIdx;
+    const next = vids[activeIdx];
+
+    prev.classList.remove('show');
+
+    if (src) {
+      if (next.dataset.preloadSrc !== src) {
+        next.src = src;
+        next.load();
+      }
+      next.currentTime = startAt || 0;
+      next.style.transform       = (zoom && zoom !== 1) ? `scale(${zoom})` : '';
+      next.style.transformOrigin = origin || '';
+      next.play().catch(() => {});
+      requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('show')));
+    } else {
+      next.classList.remove('show');
+    }
+  }
+
+  /* ─── Schedule all timers upfront (enables clean pause/resume) ─── */
+  function scheduleAll() {
+    let t = 0;
+
+    ACTS.forEach((act, i) => {
+      const isLast       = i === ACTS.length - 1;
+      const nextSrc      = isLast ? null : ACTS[i + 1].src;
+      const nextZoom     = isLast ? 1    : (ACTS[i + 1].zoom    || 1);
+      const nextOrigin   = isLast ? ''   : (ACTS[i + 1].origin  || '');
+      const nextStartAt  = isLast ? 0    : (ACTS[i + 1].startAt || 0);
+
+      if (act.methodology) {
+        sched(() => showMethodology(),  (t + 0.3) * 1000);
+        sched(() => showMethodStep(1),  (t + 0.5) * 1000);
+        sched(() => showMethodStep(2),  (t + 2.0) * 1000);
+        sched(() => showMethodStep(3),  (t + 3.5) * 1000);
+        sched(() => showMethodStep(4),  (t + 5.0) * 1000);
+        sched(() => hideMethodology(),  (t + act.hidePhrase) * 1000);
+      }
+
+      if (act.stacking) {
+        act.phrases.forEach((p, idx) => {
+          if (idx === 0) {
+            sched(() => initStack(p.h), (t + p.t) * 1000);
+          } else {
+            sched(() => appendStack(p.h), (t + p.t) * 1000);
+          }
+        });
+      } else {
+        act.phrases.forEach(p =>
+          sched(() => showPhrase(p.h, !!p.key, !!p.logo), (t + p.t) * 1000)
+        );
+      }
+
+      if (act.videoChanges) {
+        act.videoChanges.forEach(vc =>
+          sched(() => crossfade(vc.src, vc.zoom || 1, vc.origin || ''), (t + vc.t) * 1000)
+        );
+      }
+
+      if (nextSrc) {
+        const preloadMs = Math.max((t + 0.5) * 1000, (t + act.dur - CROSSFADE - PRELOAD_AHEAD) * 1000);
+        const bufIdx    = (i + 1) % 2;
+        sched(() => {
+          const v = vids[bufIdx];
+          v.dataset.preloadSrc    = nextSrc;
+          v.src                   = nextSrc;
+          v.style.transform       = (nextZoom && nextZoom !== 1) ? `scale(${nextZoom})` : '';
+          v.style.transformOrigin = nextOrigin || '';
+          v.load();
+        }, preloadMs);
+      }
+
+      sched(() => phrase.classList.remove('show', 'key'), (t + act.hidePhrase) * 1000);
+      sched(() => crossfade(nextSrc, nextZoom, nextOrigin, nextStartAt), (t + act.dur - CROSSFADE) * 1000);
+
+      if (isLast) {
+        sched(() => controls.classList.remove('visible'), (t + act.dur) * 1000);
+        sched(() => endEl.classList.add('show'),          (t + act.dur + 0.5) * 1000);
+        sched(() => fadeOutMusic(4000),                   (t + act.dur - 4) * 1000);
+      }
+
+      t += act.dur;
+    });
+  }
+
+  /* ─── Start first video ─── */
+  function startPlayback() {
+    activeIdx = 0;
+    const firstSrc = ACTS[0].src;
+    if (firstSrc) {
+      if (vids[0].dataset.preloadSrc !== firstSrc) {
+        vids[0].src = firstSrc;
+        vids[0].load();
+      }
+      vids[0].play().catch(() => {});
+      requestAnimationFrame(() => requestAnimationFrame(() => vids[0].classList.add('show')));
+    }
+    controls.classList.add('visible');
+    scheduleAll();
+  }
+
+  /* ─── Pause / Resume ─── */
+  function togglePause() {
+    if (paused) {
+      paused = false;
+      iconPause.style.display = '';
+      iconPlay.style.display  = 'none';
+      vids.forEach(v => v.play().catch(() => {}));
+      bgMusic.play().catch(() => {});
+      const now = Date.now();
+      timerQueue = timerQueue.map(e => {
+        e.id     = setTimeout(e.fn, e.remaining);
+        e.fireAt = now + e.remaining;
+        return e;
+      });
+    } else {
+      paused = true;
+      iconPause.style.display = 'none';
+      iconPlay.style.display  = '';
+      vids.forEach(v => v.pause());
+      bgMusic.pause();
+      const now = Date.now();
+      timerQueue.forEach(e => {
+        clearTimeout(e.id);
+        e.remaining = Math.max(0, e.fireAt - now);
+      });
+      timerQueue = timerQueue.filter(e => e.remaining > 0);
+    }
+  }
+
+  /* ─── Reset ─── */
+  function reset() {
+    clearAll();
+    paused = false;
+    activeIdx = 0;
+    vids.forEach(v => { v.pause(); v.classList.remove('show'); v.removeAttribute('src'); v.style.transform = ''; v.style.transformOrigin = ''; delete v.dataset.preloadSrc; });
+    phrase.classList.remove('show', 'key');
+    phrase.style.opacity = '';
+    phrase.style.transition = '';
+    phrase.innerHTML = '';
+    controls.classList.remove('visible');
+    endEl.classList.remove('show');
+    iconPause.style.display = '';
+    iconPlay.style.display  = 'none';
+    hideMethodology();
+  }
+
+  /* ─── Music fade-out ─── */
+  function fadeOutMusic(duration) {
+    const startTime = Date.now();
+    const startVol  = bgMusic.volume;
+    function step() {
+      const progress = Math.min((Date.now() - startTime) / duration, 1);
+      bgMusic.volume = startVol * (1 - progress);
+      if (progress < 1) requestAnimationFrame(step);
+      else { bgMusic.pause(); bgMusic.volume = 1; }
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ─── Events ─── */
+  introEl.addEventListener('click', () => {
+    requestFs();
+    introEl.classList.add('out');
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+    reset();
+    vids[0].dataset.preloadSrc = ACTS[0].src;
+    vids[0].src = ACTS[0].src;
+    vids[0].load();
+    sched(() => startPlayback(), 900);
+  });
+
+  replayBtn.addEventListener('click', () => {
+    bgMusic.volume = 1;
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+    reset();
+    vids[0].dataset.preloadSrc = ACTS[0].src;
+    vids[0].src = ACTS[0].src;
+    vids[0].load();
+    sched(() => startPlayback(), 700);
+  });
+
+  pauseBtn.addEventListener('click', togglePause);
+
+  /* ─── Fullscreen ─── */
+  function requestFs() {
+    const el = document.documentElement;
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {});
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    } else {
+      // iOS Safari: fullscreen API not supported on document — use active video element
+      const v = vids[activeIdx];
+      if (v && v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+    }
+    // Lock to landscape on Android/Chrome
+    screen.orientation?.lock?.('landscape').catch(() => {});
+  }
+  function exitFs() {
+    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+  function isFs() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+  function syncFsIcon() {
+    const fs = isFs();
+    iconFsEnter.style.display = fs ? 'none' : '';
+    iconFsExit.style.display  = fs ? ''     : 'none';
+  }
+
+  fsBtn.addEventListener('click', () => isFs() ? exitFs() : requestFs());
+  document.addEventListener('fullscreenchange',       syncFsIcon);
+  document.addEventListener('webkitfullscreenchange', syncFsIcon);
+  syncFsIcon();
+
+  /* Preload Soul Elements logo so it's cached before playback */
+  const _preloadSE = new Image();
+  _preloadSE.src = 'assets/logos/Logo con pastilla-22.png';
+
+  /* Preload first video on page load so it's buffered before the user clicks play */
+  vids[0].dataset.preloadSrc = ACTS[0].src;
+  vids[0].src = ACTS[0].src;
+  vids[0].load();
+</script>
+</body>
+</html>
